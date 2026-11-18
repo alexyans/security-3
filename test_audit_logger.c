@@ -50,7 +50,10 @@ static void teardown(void) {
 }
 
 static int test_fopen(void) {
-    FILE *f = fopen(TEST_ARTIFACT_FILE, "r");
+    FILE *pre = fopen(TEST_ARTIFACT_FILE, "w");
+    if (pre) fclose(pre);
+
+    FILE *f = fopen(TEST_ARTIFACT_FILE, "a");
     if (f) fclose(f);
 
     FILE *logfile = fopen(AUDIT_LOG, "r");
@@ -83,6 +86,44 @@ static int test_fopen(void) {
     }
 
     printf("PASS: fopen logged.\n");
+    teardown();
+    return 0;
+}
+
+static int test_fcreate(void) {
+    FILE *f = fopen(TEST_ARTIFACT_FILE, "a");
+    if (f) fclose(f);
+
+    FILE *logfile = fopen(AUDIT_LOG, "r");
+    if (!logfile) {
+        fprintf(stderr, "FAIL: failed to create audit log\n");
+        teardown();
+        return 1;
+    }
+
+    char line[2048];
+    int found = 0;
+    while (fgets(line, sizeof(line), logfile)) {
+        if (strstr(line, "CREATED") && strstr(line, TEST_ARTIFACT_FILE)) {
+            found = 1;
+            break;
+        }
+    }
+    fclose(logfile);
+
+    if (!found) {
+        fprintf(stderr, "FAIL: failed to log operation `fcreate`\n");
+        teardown();
+        return 1;
+    }
+
+    if (!assert_structure_ok(line)) {
+        fprintf(stderr, "FAIL: failed to validate log line structure\n");
+        teardown();
+        return 1;
+    }
+
+    printf("PASS: fcreate logged.\n");
     teardown();
     return 0;
 }
@@ -128,6 +169,7 @@ static int test_fclose(void) {
 int main(void) {
     setup_all();
 
+    if (test_fcreate()) return 1;
     if (test_fopen())  return 1;
     if (test_fclose()) return 1;
 

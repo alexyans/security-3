@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <time.h>
 #include <unistd.h>
 #include "libauditlog.h"
@@ -14,6 +15,17 @@
 
 static FILE *(*real_fopen)(const char *, const char *) = NULL;
 static int   (*real_fclose)(FILE *) = NULL;
+
+static int does_file_exist(const char *path) {
+    struct stat st;
+    return stat(path, &st) == 0;
+}
+
+static int should_create_file_if_not_exists(const char *mode) {
+    return strcmp(mode, "w")  == 0 ||
+           strcmp(mode, "w+") == 0 ||
+           strcmp(mode, "a")  == 0;
+}
 
 static void compute_sha256(const char *filepath, char out_hex[65]) {
     FILE *f = real_fopen(filepath, "rb");
@@ -86,7 +98,8 @@ FILE *fopen(const char *path, const char *mode) {
     fill_datetime(&event);
     event.uid = getuid();
     event.pid = getpid();
-    event.operation = OP_OPENED;
+    event.operation = (!does_file_exist(event.filename) && should_create_file_if_not_exists(mode))
+        ? OP_CREATED : OP_OPENED;
     if (path[0] == '/') {
         strncpy(event.filename, path, sizeof(event.filename) - 1);
     } else {
