@@ -10,7 +10,8 @@
 #include "libauditlog.h"
 
 #define AUDIT_LOG_DEFAULT "/tmp/access_audit.log"
-#define AUDIT_LOG (getenv("AUDIT_LOG_PATH") ? getenv("AUDIT_LOG_PATH") : AUDIT_LOG_DEFAULT)
+#define AUDIT_LOG         (getenv("AUDIT_LOG_PATH") ? getenv("AUDIT_LOG_PATH") : AUDIT_LOG_DEFAULT)
+#define AUDIT_LOG_BYPASS  (getenv("AUDIT_LOG_BYPASS") != NULL)
 #define LOG_TEMPLATE "{\"date\":\"%s\",\"time\":\"%s\",\"pid\":%d,\"uid\":%u,\"filename\":\"%s\",\"operation\":\"%s\",\"denied\":%d,\"file_hash\":\"%s\"}\n"
 
 static FILE *(*real_fopen)(const char *, const char *) = NULL;
@@ -93,6 +94,8 @@ FILE *fopen(const char *path, const char *mode) {
         real_fopen = dlsym(RTLD_NEXT, "fopen");
     if (!real_fclose)
         real_fclose = dlsym(RTLD_NEXT, "fclose");
+    if (AUDIT_LOG_BYPASS)
+        return real_fopen(path, mode);
 
     log_event event = {0};
     fill_datetime(&event);
@@ -118,6 +121,8 @@ FILE *fopen(const char *path, const char *mode) {
 int fclose(FILE *handle) {
     if (!real_fclose)
         real_fclose = dlsym(RTLD_NEXT, "fclose");
+    if (AUDIT_LOG_BYPASS)
+        return real_fclose(handle);
 
     log_event event = {0};
     fill_datetime(&event);

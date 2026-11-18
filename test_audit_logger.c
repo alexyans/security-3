@@ -11,6 +11,19 @@ static void setup_all(void) {
     setenv("AUDIT_LOG_PATH", AUDIT_LOG, 1);
 }
 
+static FILE *setup_fopen(const char *path, const char *mode) {
+    setenv("AUDIT_LOG_BYPASS", "1", 1);
+    FILE *f = fopen(path, mode);
+    unsetenv("AUDIT_LOG_BYPASS");
+    return f;
+}
+
+static void setup_fclose(FILE *f) {
+    setenv("AUDIT_LOG_BYPASS", "1", 1);
+    fclose(f);
+    unsetenv("AUDIT_LOG_BYPASS");
+}
+
 static int assert_structure_ok(const char *line) {
     const char *numeric_fields[] = { "\"uid\":", "\"pid\":", "\"denied\":" };
     for (int i = 0; i < 3; i++) {
@@ -50,8 +63,8 @@ static void teardown(void) {
 }
 
 static int test_fopen(void) {
-    FILE *pre = fopen(TEST_ARTIFACT_FILE, "w");
-    if (pre) fclose(pre);
+    FILE *pre = setup_fopen(TEST_ARTIFACT_FILE, "w");
+    if (pre) setup_fclose(pre);
 
     FILE *f = fopen(TEST_ARTIFACT_FILE, "a");
     if (f) fclose(f);
