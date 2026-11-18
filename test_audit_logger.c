@@ -2,9 +2,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <unistd.h>
 
-#define AUDIT_LOG "./artifacts/access_audit.log"
-#define TEST_ARTIFACT_FILE "./artifacts/target.file"
+#define AUDIT_LOG "artifacts/access_audit.log"
+#define TEST_ARTIFACT_FILE "artifacts/target.file"
 
 static void setup_all(void) {
     setenv("AUDIT_LOG_PATH", AUDIT_LOG, 1);

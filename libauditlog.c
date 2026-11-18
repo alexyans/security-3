@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <dlfcn.h>
 #include "libauditlog.h"
@@ -48,6 +49,13 @@ FILE *fopen(const char *path, const char *mode) {
     log_event event = {0};
     event.uid = getuid();
     event.pid = getpid();
+    if (path[0] == '/') {
+        strncpy(event.filename, path, sizeof(event.filename) - 1);
+    } else {
+        char cwd[256];
+        getcwd(cwd, sizeof(cwd));
+        snprintf(event.filename, sizeof(event.filename), "%s/%s", cwd, path);
+    }
     write_log_event(&event, AUDIT_LOG);
 
     return real_fopen(path, mode);
@@ -61,6 +69,10 @@ int fclose(FILE *handle) {
     event.uid = getuid();
     event.pid = getpid();
     event.operation = OP_CLOSED;
+    char fdlink[32];
+    snprintf(fdlink, sizeof(fdlink), "/proc/self/fd/%d", fileno(handle));
+    ssize_t n = readlink(fdlink, event.filename, sizeof(event.filename) - 1);
+    if (n > 0) event.filename[n] = '\0';
     write_log_event(&event, AUDIT_LOG);
 
     return real_fclose(handle);
