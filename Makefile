@@ -2,11 +2,11 @@ all: audit_logger.so test
 .PHONY: all
 
 audit_logger.so:
-	gcc -shared -fPIC libauditlog.c -o audit_logger.so
+	gcc -shared -fPIC libauditlog.c -o audit_logger.so -ldl
 
 test: audit_logger.so test_audit_logger
 	mkdir -p ./artifacts
-	./test_audit_logger
+	LD_PRELOAD=./audit_logger.so ./test_audit_logger
 .PHONY: test
 
 test_audit_logger:
