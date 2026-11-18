@@ -27,7 +27,7 @@ static int assert_structure_ok(const char *line) {
         }
     }
 
-    const char *string_fields[] = { "\"filename\":" };
+    const char *string_fields[] = { "\"date\":", "\"time\":", "\"filename\":" };
     for (int i = 0; i < 3; i++) {
         const char *pos = strstr(line, string_fields[i]);
         if (!pos) {

@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <unistd.h>
 #include <dlfcn.h>
 #include "libauditlog.h"
@@ -11,6 +12,13 @@
 
 static FILE *(*real_fopen)(const char *, const char *) = NULL;
 static int   (*real_fclose)(FILE *) = NULL;
+
+static void fill_datetime(log_event *event) {
+    time_t now = time(NULL);
+    struct tm *utc = gmtime(&now);
+    strftime(event->date, sizeof(event->date), "%Y-%m-%d", utc);
+    strftime(event->time, sizeof(event->time), "%H:%M:%S", utc);
+}
 
 static const char *op_to_str(log_operation op) {
     switch (op) {
@@ -47,6 +55,7 @@ FILE *fopen(const char *path, const char *mode) {
         real_fclose = dlsym(RTLD_NEXT, "fclose");
 
     log_event event = {0};
+    fill_datetime(&event);
     event.uid = getuid();
     event.pid = getpid();
     if (path[0] == '/') {
@@ -66,6 +75,7 @@ int fclose(FILE *handle) {
         real_fclose = dlsym(RTLD_NEXT, "fclose");
 
     log_event event = {0};
+    fill_datetime(&event);
     event.uid = getuid();
     event.pid = getpid();
     event.operation = OP_CLOSED;
