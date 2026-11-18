@@ -29,6 +29,7 @@ static int should_create_file_if_not_exists(const char *mode) {
 }
 
 static void compute_sha256(const char *filepath, char out_hex[65]) {
+    if (filepath[0] != '/') return;
     FILE *f = real_fopen(filepath, "rb");
     if (!f) {
         fprintf(stderr, "failed to hash file contents: %s\n", filepath);
@@ -101,8 +102,6 @@ FILE *fopen(const char *path, const char *mode) {
     fill_datetime(&event);
     event.uid = getuid();
     event.pid = getpid();
-    event.operation = (!does_file_exist(event.filename) && should_create_file_if_not_exists(mode))
-        ? OP_CREATED : OP_OPENED;
     if (path[0] == '/') {
         strncpy(event.filename, path, sizeof(event.filename) - 1);
     } else {
@@ -110,6 +109,8 @@ FILE *fopen(const char *path, const char *mode) {
         getcwd(cwd, sizeof(cwd));
         snprintf(event.filename, sizeof(event.filename), "%s/%s", cwd, path);
     }
+    event.operation = (!does_file_exist(event.filename) && should_create_file_if_not_exists(mode))
+        ? OP_CREATED : OP_OPENED;
     FILE *result = real_fopen(path, mode);
     event.denied = (result == NULL && errno == EACCES) ? 1 : 0;
     compute_sha256(event.filename, event.file_hash);
