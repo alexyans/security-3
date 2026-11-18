@@ -1,12 +1,31 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 #define AUDIT_LOG "./artifacts/access_audit.log"
 #define TEST_ARTIFACT_FILE "./artifacts/target.file"
 
 static void setup_all(void) {
     setenv("AUDIT_LOG_PATH", AUDIT_LOG, 1);
+}
+
+static int assert_structure_ok(const char *line) {
+    const char *fields[] = { "\"uid\":", "\"pid\":" };
+    for (int i = 0; i < 2; i++) {
+        const char *pos = strstr(line, fields[i]);
+        if (!pos) {
+            fprintf(stderr, "FAIL: missing field %s\n", fields[i]);
+            return 0;
+        }
+        pos += strlen(fields[i]);
+        while (*pos == ' ') pos++;
+        if (!isdigit(*pos)) {
+            fprintf(stderr, "FAIL: field %s is not a number\n", fields[i]);
+            return 0;
+        }
+    }
+    return 1;
 }
 
 static void teardown(void) {
@@ -41,6 +60,12 @@ static int test_fopen(void) {
         return 1;
     }
 
+    if (!assert_structure_ok(line)) {
+        fprintf(stderr, "FAIL: failed to validate log line structure\n");
+        teardown();
+        return 1;
+    }
+
     printf("PASS: fopen logged.\n");
     teardown();
     return 0;
@@ -69,6 +94,12 @@ static int test_fclose(void) {
 
     if (!found) {
         fprintf(stderr, "FAIL: failed to log operation `fclose`\n");
+        teardown();
+        return 1;
+    }
+
+    if (!assert_structure_ok(line)) {
+        fprintf(stderr, "FAIL: failed to validate log line structure\n");
         teardown();
         return 1;
     }
