@@ -1,16 +1,16 @@
-all: libauditlog.so test
+all: audit_logger.so test
 .PHONY: all
 
-libauditlog.so:
-	gcc -shared -fPIC libauditlog.c
+audit_logger.so:
+	gcc -shared -fPIC libauditlog.c -o audit_logger.so
 
-test: libauditlog.so test_libauditlog
-	./libauditlog-test
+test: audit_logger.so test_audit_logger
+	./test_audit_logger
 .PHONY: test
 
-test_libauditlog:
-	gcc test_libauditlog.c -o libauditlog-test
+test_audit_logger:
+	gcc test_audit_logger.c -o test_audit_logger
 
 clean:
-	rm -f libauditlog.so libauditlog-test
+	rm -f audit_logger.so test_audit_logger
 .PHONY: clean
