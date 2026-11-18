@@ -58,6 +58,7 @@ FILE *fopen(const char *path, const char *mode) {
     fill_datetime(&event);
     event.uid = getuid();
     event.pid = getpid();
+    event.operation = OP_OPENED;
     if (path[0] == '/') {
         strncpy(event.filename, path, sizeof(event.filename) - 1);
     } else {

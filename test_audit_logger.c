@@ -27,8 +27,8 @@ static int assert_structure_ok(const char *line) {
         }
     }
 
-    const char *string_fields[] = { "\"date\":", "\"time\":", "\"filename\":" };
-    for (int i = 0; i < 3; i++) {
+    const char *string_fields[] = { "\"date\":", "\"time\":", "\"filename\":", "\"operation\":" };
+    for (int i = 0; i < 4; i++) {
         const char *pos = strstr(line, string_fields[i]);
         if (!pos) {
             fprintf(stderr, "FAIL: missing field %s\n", string_fields[i]);
@@ -63,7 +63,7 @@ static int test_fopen(void) {
     char line[2048];
     int found = 0;
     while (fgets(line, sizeof(line), logfile)) {
-        if (strstr(line, TEST_ARTIFACT_FILE)) {
+        if (strstr(line, "OPENED") && strstr(line, TEST_ARTIFACT_FILE)) {
             found = 1;
             break;
         }
@@ -101,7 +101,7 @@ static int test_fclose(void) {
     char line[2048];
     int found = 0;
     while (fgets(line, sizeof(line), logfile)) {
-        if (strstr(line, "CLOSED")) {
+        if (strstr(line, "CLOSED") && strstr(line, TEST_ARTIFACT_FILE)) {
             found = 1;
             break;
         }
