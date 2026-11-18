@@ -12,8 +12,8 @@ static void setup_all(void) {
 }
 
 static int assert_structure_ok(const char *line) {
-    const char *numeric_fields[] = { "\"uid\":", "\"pid\":" };
-    for (int i = 0; i < 2; i++) {
+    const char *numeric_fields[] = { "\"uid\":", "\"pid\":", "\"denied\":" };
+    for (int i = 0; i < 3; i++) {
         const char *pos = strstr(line, numeric_fields[i]);
         if (!pos) {
             fprintf(stderr, "FAIL: missing field %s\n", numeric_fields[i]);
