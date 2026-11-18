@@ -5,7 +5,7 @@
 
 #define AUDIT_LOG_DEFAULT "/tmp/access_audit.log"
 #define AUDIT_LOG (getenv("AUDIT_LOG_PATH") ? getenv("AUDIT_LOG_PATH") : AUDIT_LOG_DEFAULT)
-#define LOG_TEMPLATE "%s %s %d %u [%s] %s %s %s\n"
+#define LOG_TEMPLATE "{\"date\":\"%s\",\"time\":\"%s\",\"pid\":%d,\"uid\":%u,\"filename\":\"%s\",\"operation\":\"%s\",\"denied\":%s,\"file_hash\":\"%s\"}\n"
 
 static FILE *(*real_fopen)(const char *, const char *) = NULL;
 static int   (*real_fclose)(FILE *) = NULL;
@@ -31,7 +31,7 @@ static void write_log_event(const log_event *event, const char *logfile) {
         event->uid,
         event->filename,
         op_to_str(event->operation),
-        event->denied ? "DENIED" : "ALLOWED",
+        event->denied ? "true" : "false",
         event->file_hash
     );
 
