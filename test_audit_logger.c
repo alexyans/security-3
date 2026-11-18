@@ -5,12 +5,18 @@
 #define AUDIT_LOG "./artifacts/access_audit.log"
 #define TEST_ARTIFACT_FILE "./artifacts/target.file"
 
+static void setup_all(void) {
+    setenv("AUDIT_LOG_PATH", AUDIT_LOG, 1);
+}
+
 static void teardown(void) {
     remove(TEST_ARTIFACT_FILE);
     remove(AUDIT_LOG);
 }
 
 int main(void) {
+    setup_all();
+
     FILE *f = fopen(TEST_ARTIFACT_FILE, "r");
     if (f) fclose(f);
 

@@ -1,8 +1,10 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <dlfcn.h>
 #include "libauditlog.h"
 
-#define AUDIT_LOG    "/tmp/access_audit.log"
+#define AUDIT_LOG_DEFAULT "/tmp/access_audit.log"
+#define AUDIT_LOG (getenv("AUDIT_LOG_PATH") ? getenv("AUDIT_LOG_PATH") : AUDIT_LOG_DEFAULT)
 #define LOG_TEMPLATE "%s %s %d %u [%s] %s %s %s\n"
 
 static FILE *(*real_fopen)(const char *, const char *) = NULL;
