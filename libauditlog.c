@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <dlfcn.h>
 #include "libauditlog.h"
 
@@ -45,6 +46,7 @@ FILE *fopen(const char *path, const char *mode) {
         real_fclose = dlsym(RTLD_NEXT, "fclose");
 
     log_event event = {0};
+    event.uid = getuid();
     write_log_event(&event, AUDIT_LOG);
 
     return real_fopen(path, mode);
@@ -55,6 +57,7 @@ int fclose(FILE *handle) {
         real_fclose = dlsym(RTLD_NEXT, "fclose");
 
     log_event event = {0};
+    event.uid = getuid();
     event.operation = OP_CLOSED;
     write_log_event(&event, AUDIT_LOG);
 
