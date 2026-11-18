@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define AUDIT_LOG "/tmp/access_audit.log"
-#define TEST_ARTIFACT_FILE "./test_artifact.file"
+#define AUDIT_LOG "./artifacts/access_audit.log"
+#define TEST_ARTIFACT_FILE "./artifacts/target.file"
 
 static void teardown(void) {
     remove(TEST_ARTIFACT_FILE);

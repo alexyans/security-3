@@ -19,7 +19,7 @@ typedef struct {
     char          time[9];
     log_operation operation;
     int           denied;
-    uint8_t       file_hash[32];
+    char          file_hash[65];
 } log_event;
 
 #endif

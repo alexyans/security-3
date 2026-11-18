@@ -5,3 +5,10 @@
 ```
 $ sudo apt install gcc make libc6-dev
 ```
+
+## Usage
+
+```sh
+$ make
+```
+
