@@ -14,7 +14,7 @@ typedef enum {
 typedef struct {
     uid_t         uid;
     pid_t         pid;
-    char          filename[256];
+    char          filename[2048];
     char          date[11];
     char          time[9];
     log_operation operation;

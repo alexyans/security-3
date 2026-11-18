@@ -63,7 +63,7 @@ FILE *fopen(const char *path, const char *mode) {
     if (path[0] == '/') {
         strncpy(event.filename, path, sizeof(event.filename) - 1);
     } else {
-        char cwd[256];
+        char cwd[2048];
         getcwd(cwd, sizeof(cwd));
         snprintf(event.filename, sizeof(event.filename), "%s/%s", cwd, path);
     }
