@@ -8,6 +8,7 @@
 #define LOG_TEMPLATE "%s %s %d %u [%s] %s %s %s\n"
 
 static FILE *(*real_fopen)(const char *, const char *) = NULL;
+static int   (*real_fclose)(FILE *) = NULL;
 
 static const char *op_to_str(log_operation op) {
     switch (op) {
@@ -34,15 +35,28 @@ static void write_log_event(const log_event *event, const char *logfile) {
         event->file_hash
     );
 
-    fclose(f);
+    real_fclose(f);
 }
 
 FILE *fopen(const char *path, const char *mode) {
     if (!real_fopen)
         real_fopen = dlsym(RTLD_NEXT, "fopen");
+    if (!real_fclose)
+        real_fclose = dlsym(RTLD_NEXT, "fclose");
 
     log_event event = {0};
     write_log_event(&event, AUDIT_LOG);
 
     return real_fopen(path, mode);
+}
+
+int fclose(FILE *handle) {
+    if (!real_fclose)
+        real_fclose = dlsym(RTLD_NEXT, "fclose");
+
+    log_event event = {0};
+    event.operation = OP_CLOSED;
+    write_log_event(&event, AUDIT_LOG);
+
+    return real_fclose(handle);
 }
