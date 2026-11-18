@@ -118,6 +118,30 @@ FILE *fopen(const char *path, const char *mode) {
     return result;
 }
 
+size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream) {
+    static size_t (*real_fwrite)(const void *, size_t, size_t, FILE *) = NULL;
+    if (!real_fwrite)
+        real_fwrite = dlsym(RTLD_NEXT, "fwrite");
+    if (AUDIT_LOG_BYPASS)
+        return real_fwrite(ptr, size, nmemb, stream);
+
+    log_event event = {0};
+    fill_datetime(&event);
+    event.uid = getuid();
+    event.pid = getpid();
+    event.operation = OP_WRITTEN;
+    char fdlink[32];
+    snprintf(fdlink, sizeof(fdlink), "/proc/self/fd/%d", fileno(stream));
+    ssize_t n = readlink(fdlink, event.filename, sizeof(event.filename) - 1);
+    if (n > 0) event.filename[n] = '\0';
+    size_t result = real_fwrite(ptr, size, nmemb, stream);
+    event.denied = (result == 0 && errno == EACCES) ? 1 : 0;
+    compute_sha256(event.filename, event.file_hash);
+    write_log_event(&event, AUDIT_LOG);
+
+    return result;
+}
+
 int fclose(FILE *handle) {
     if (!real_fclose)
         real_fclose = dlsym(RTLD_NEXT, "fclose");

@@ -141,6 +141,47 @@ static int test_fcreate(void) {
     return 0;
 }
 
+static int test_fwrite(void) {
+    FILE *f = setup_fopen(TEST_ARTIFACT_FILE, "w");
+    if (f) {
+        fwrite("test", 1, 4, f);
+        setup_fclose(f);
+    }
+
+    FILE *logfile = fopen(AUDIT_LOG, "r");
+    if (!logfile) {
+        fprintf(stderr, "FAIL: failed to create audit log\n");
+        teardown();
+        return 1;
+    }
+
+    char line[2048];
+    int found = 0;
+    while (fgets(line, sizeof(line), logfile)) {
+        if (strstr(line, "WRITTEN") && strstr(line, TEST_ARTIFACT_FILE)) {
+            found = 1;
+            break;
+        }
+    }
+    fclose(logfile);
+
+    if (!found) {
+        fprintf(stderr, "FAIL: failed to log operation `fwrite`\n");
+        teardown();
+        return 1;
+    }
+
+    if (!assert_structure_ok(line)) {
+        fprintf(stderr, "FAIL: failed to validate log line structure\n");
+        teardown();
+        return 1;
+    }
+
+    printf("PASS: fwrite logged.\n");
+    teardown();
+    return 0;
+}
+
 static int test_fclose(void) {
     FILE *f = fopen(TEST_ARTIFACT_FILE, "w");
     if (f) fclose(f);
@@ -184,6 +225,7 @@ int main(void) {
 
     if (test_fcreate()) return 1;
     if (test_fopen())  return 1;
+    if (test_fwrite())  return 1;
     if (test_fclose()) return 1;
 
     return 0;
