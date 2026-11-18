@@ -47,6 +47,7 @@ FILE *fopen(const char *path, const char *mode) {
 
     log_event event = {0};
     event.uid = getuid();
+    event.pid = getpid();
     write_log_event(&event, AUDIT_LOG);
 
     return real_fopen(path, mode);
@@ -58,6 +59,7 @@ int fclose(FILE *handle) {
 
     log_event event = {0};
     event.uid = getuid();
+    event.pid = getpid();
     event.operation = OP_CLOSED;
     write_log_event(&event, AUDIT_LOG);
 
