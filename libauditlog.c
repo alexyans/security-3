@@ -1,10 +1,11 @@
+#include <dlfcn.h>
+#include <errno.h>
+#include <openssl/evp.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <errno.h>
 #include <time.h>
 #include <unistd.h>
-#include <dlfcn.h>
 #include "libauditlog.h"
 
 #define AUDIT_LOG_DEFAULT "/tmp/access_audit.log"
@@ -13,6 +14,32 @@
 
 static FILE *(*real_fopen)(const char *, const char *) = NULL;
 static int   (*real_fclose)(FILE *) = NULL;
+
+static void compute_sha256(const char *filepath, char out_hex[65]) {
+    FILE *f = real_fopen(filepath, "rb");
+    if (!f) {
+        fprintf(stderr, "failed to hash file contents: %s\n", filepath);
+        return;
+    }
+
+    EVP_MD_CTX *ctx = EVP_MD_CTX_new();
+    EVP_DigestInit_ex(ctx, EVP_sha256(), NULL);
+
+    unsigned char buf[4096];
+    size_t n;
+    while ((n = fread(buf, 1, sizeof(buf), f)) > 0)
+        EVP_DigestUpdate(ctx, buf, n);
+
+    real_fclose(f);
+
+    unsigned char hash[32];
+    unsigned int hash_len;
+    EVP_DigestFinal_ex(ctx, hash, &hash_len);
+    EVP_MD_CTX_free(ctx);
+
+    for (int i = 0; i < 32; i++)
+        snprintf(out_hex + i * 2, 3, "%02x", hash[i]);
+}
 
 static void fill_datetime(log_event *event) {
     time_t now = time(NULL);
@@ -69,6 +96,7 @@ FILE *fopen(const char *path, const char *mode) {
     }
     FILE *result = real_fopen(path, mode);
     event.denied = (result == NULL && errno == EACCES) ? 1 : 0;
+    compute_sha256(event.filename, event.file_hash);
     write_log_event(&event, AUDIT_LOG);
 
     return result;
@@ -89,6 +117,7 @@ int fclose(FILE *handle) {
     if (n > 0) event.filename[n] = '\0';
     int result = real_fclose(handle);
     event.denied = 0; // flcose is not access-controlled; we always set denied to 0
+    compute_sha256(event.filename, event.file_hash);
     write_log_event(&event, AUDIT_LOG);
 
     return result;

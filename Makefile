@@ -2,7 +2,7 @@ all: audit_logger.so test
 .PHONY: all
 
 audit_logger.so:
-	gcc -shared -fPIC libauditlog.c -o audit_logger.so -ldl
+	gcc -shared -fPIC libauditlog.c -o audit_logger.so -ldl -lcrypto
 
 test: audit_logger.so test_audit_logger
 	mkdir -p ./artifacts

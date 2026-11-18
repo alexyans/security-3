@@ -1,7 +1,7 @@
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
 #include <unistd.h>
 
 #define AUDIT_LOG "artifacts/access_audit.log"
@@ -27,8 +27,8 @@ static int assert_structure_ok(const char *line) {
         }
     }
 
-    const char *string_fields[] = { "\"date\":", "\"time\":", "\"filename\":", "\"operation\":" };
-    for (int i = 0; i < 4; i++) {
+    const char *string_fields[] = { "\"date\":", "\"time\":", "\"filename\":", "\"operation\":", "\"file_hash\":" };
+    for (int i = 0; i < 5; i++) {
         const char *pos = strstr(line, string_fields[i]);
         if (!pos) {
             fprintf(stderr, "FAIL: missing field %s\n", string_fields[i]);
