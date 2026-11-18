@@ -12,20 +12,35 @@ static void setup_all(void) {
 }
 
 static int assert_structure_ok(const char *line) {
-    const char *fields[] = { "\"uid\":", "\"pid\":" };
+    const char *numeric_fields[] = { "\"uid\":", "\"pid\":" };
     for (int i = 0; i < 2; i++) {
-        const char *pos = strstr(line, fields[i]);
+        const char *pos = strstr(line, numeric_fields[i]);
         if (!pos) {
-            fprintf(stderr, "FAIL: missing field %s\n", fields[i]);
+            fprintf(stderr, "FAIL: missing field %s\n", numeric_fields[i]);
             return 0;
         }
-        pos += strlen(fields[i]);
+        pos += strlen(numeric_fields[i]);
         while (*pos == ' ') pos++;
         if (!isdigit(*pos)) {
-            fprintf(stderr, "FAIL: field %s is not a number\n", fields[i]);
+            fprintf(stderr, "FAIL: field %s is not a number\n", numeric_fields[i]);
             return 0;
         }
     }
+
+    const char *string_fields[] = { "\"filename\":" };
+    for (int i = 0; i < 3; i++) {
+        const char *pos = strstr(line, string_fields[i]);
+        if (!pos) {
+            fprintf(stderr, "FAIL: missing field %s\n", string_fields[i]);
+            return 0;
+        }
+        pos += strlen(string_fields[i]);
+        if (*pos != '"' || *(pos + 1) == '"') {
+            fprintf(stderr, "FAIL: field %s is empty or malformed\n", string_fields[i]);
+            return 0;
+        }
+    }
+
     return 1;
 }
 
