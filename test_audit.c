@@ -152,7 +152,7 @@ generate_artifacts(char restricted[][512], char accessible[][512])
 	for (int i = 0; i < RESTRICTED_ARTIFACT_COUNT; i++) {
 		snprintf(restricted[i], 512, "/tmp/audit_restricted_%ld_%d.txt", ts, i);
 		int fd = open(restricted[i], O_CREAT | O_WRONLY, 0600);
-		if (fd >= 0) close(fd);
+		if (fd >= 0) { printf("created: %s\n", restricted[i]); close(fd); }
 	}
 	for (int i = 0; i < ACCESSIBLE_ARTIFACT_COUNT; i++) {
 		snprintf(accessible[i], 512, "/tmp/audit_accessible_%ld_%d.txt", ts, i);
