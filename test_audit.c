@@ -60,8 +60,11 @@ worker_loop(int read_fd)
 	while (read(read_fd, &a, sizeof(a)) == sizeof(a)) {
 		FILE *f = fopen(a.filename, mode_strings[a.mode]);
 		if (f) {
-			if (a.mode != MODE_R)
-				fprintf(f, "this should change the sha pid=%d ts=%ld\n", getpid(), (long)time(NULL));
+			if (a.mode != MODE_R) {
+				char buf[128];
+				int n = snprintf(buf, sizeof(buf), "this should change the sha pid=%d ts=%ld\n", getpid(), (long)time(NULL));
+				fwrite(buf, 1, n, f);
+			}
 			fclose(f);
 		}
 	}
