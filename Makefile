@@ -15,6 +15,9 @@ test_libauditlog:
 audit_monitor:
 	gcc audit_monitor.c -o audit_monitor
 
+test_audit:
+	gcc test_audit.c -o test_audit
+
 clean:
-	rm -f audit_logger.so test_libauditlog audit_monitor
+	rm -f audit_logger.so test_libauditlog audit_monitor test_audit
 .PHONY: clean
