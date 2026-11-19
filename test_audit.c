@@ -113,10 +113,16 @@ flip_coin_artifact(char restricted[][512],
 	}
 }
 
-static void
-fork_and_run(struct worker *worker, void (*fn)(void))
+static struct worker *
+flip_coin_worker(struct worker *workers)
 {
-	write(worker->fd, &fn, sizeof(fn));
+	return &workers[rand() % WORKER_COUNT];
+}
+
+static void
+dispatch_action(struct worker *worker, struct action *a)
+{
+	write(worker->fd, a, sizeof(*a));
 }
 
 static void
@@ -151,6 +157,7 @@ int main(void) {
 		strncpy(a.filename, flip_coin_artifact(restricted_artifacts, accessible_artifacts, &accessible_count), sizeof(a.filename) - 1);
 		a.filename[sizeof(a.filename) - 1] = '\0';
 		a.mode = flip_coin_file_mode();
+		dispatch_action(flip_coin_worker(workers), &a);
 	}
 
 	shutdown_workers(workers);
