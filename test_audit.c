@@ -1,4 +1,5 @@
 #include <fcntl.h>
+#include <sys/stat.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -107,8 +108,8 @@ flip_coin_artifact(char restricted[][512],
 		int idx = rand() % (*accessible_count + 1);
 		if (idx == *accessible_count && *accessible_count < MAX_ARTIFACTS) {
 			snprintf(accessible[*accessible_count], 512, "/tmp/audit_accessible_%ld_%d.txt", (long)time(NULL), *accessible_count);
-			FILE *f = fopen(accessible[*accessible_count], "w");
-			if (f) fclose(f);
+			int fd = open(accessible[*accessible_count], O_CREAT | O_WRONLY, 0666);
+			if (fd >= 0) { fchmod(fd, 0666); printf("created: %s\n", accessible[*accessible_count]); close(fd); }
 			(*accessible_count)++;
 		} else if (idx == *accessible_count) {
 			idx = *accessible_count - 1;
@@ -140,8 +141,8 @@ generate_artifacts(char restricted[][512], char accessible[][512])
 	}
 	for (int i = 0; i < ACCESSIBLE_ARTIFACT_COUNT; i++) {
 		snprintf(accessible[i], 512, "/tmp/audit_accessible_%ld_%d.txt", ts, i);
-		int fd = open(accessible[i], O_CREAT | O_WRONLY, 0644);
-		if (fd >= 0) close(fd);
+		int fd = open(accessible[i], O_CREAT | O_WRONLY, 0666);
+		if (fd >= 0) { fchmod(fd, 0666); printf("created: %s\n", accessible[i]); close(fd); }
 	}
 }
 
