@@ -1,11 +1,14 @@
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
 #include <sys/wait.h>
 
-#define ARTIFACT_COUNT 10
-#define MAX_ARTIFACTS  256
+#define SEED_ARTIFACT_COUNT      10
+#define RESTRICTED_ARTIFACT_COUNT (SEED_ARTIFACT_COUNT / 5) // 20% ratio
+#define ACCESSIBLE_ARTIFACT_COUNT (SEED_ARTIFACT_COUNT - RESTRICTED_ARTIFACT_COUNT)
+#define MAX_ARTIFACTS            256
 #define WORKER_COUNT   5
 #define MAX_ACTIONS    100
 #define TEST_UID_COUNT 5
@@ -83,16 +86,23 @@ flip_coin_file_mode(void)
 }
 
 static const char *
-flip_coin_artifact(char artifacts[][512], int *count)
+flip_coin_artifact(char restricted[][512],
+                   char accessible[][512], int *accessible_count)
 {
-	int idx = rand() % (*count + 1);
-	if (idx == *count && *count < MAX_ARTIFACTS) {
-		snprintf(artifacts[*count], 512, "/tmp/audit_test_%ld_%d.txt", (long)time(NULL), *count);
-		(*count)++;
-	} else if (idx == *count) {
-		idx = *count - 1;
+	if (rand() % 5 == 0) {
+		return restricted[rand() % RESTRICTED_ARTIFACT_COUNT];
+	} else {
+		int idx = rand() % (*accessible_count + 1);
+		if (idx == *accessible_count && *accessible_count < MAX_ARTIFACTS) {
+			snprintf(accessible[*accessible_count], 512, "/tmp/audit_accessible_%ld_%d.txt", (long)time(NULL), *accessible_count);
+			FILE *f = fopen(accessible[*accessible_count], "w");
+			if (f) fclose(f);
+			(*accessible_count)++;
+		} else if (idx == *accessible_count) {
+			idx = *accessible_count - 1;
+		}
+		return accessible[idx];
 	}
-	return artifacts[idx];
 }
 
 static void
@@ -102,21 +112,27 @@ fork_and_run(struct worker *worker, void (*fn)(void))
 }
 
 static void
-generate_artifacts(char artifacts[ARTIFACT_COUNT][512])
+generate_artifacts(char restricted[][512], char accessible[][512])
 {
 	long ts = (long)time(NULL);
-	for (int i = 0; i < ARTIFACT_COUNT; i++) {
-		snprintf(artifacts[i], 512, "/tmp/audit_test_%ld_%d.txt", ts, i);
-		FILE *f = fopen(artifacts[i], "w");
-		if (f) fclose(f);
+	for (int i = 0; i < RESTRICTED_ARTIFACT_COUNT; i++) {
+		snprintf(restricted[i], 512, "/tmp/audit_restricted_%ld_%d.txt", ts, i);
+		int fd = open(restricted[i], O_CREAT | O_WRONLY, 0600);
+		if (fd >= 0) close(fd);
+	}
+	for (int i = 0; i < ACCESSIBLE_ARTIFACT_COUNT; i++) {
+		snprintf(accessible[i], 512, "/tmp/audit_accessible_%ld_%d.txt", ts, i);
+		int fd = open(accessible[i], O_CREAT | O_WRONLY, 0644);
+		if (fd >= 0) close(fd);
 	}
 }
 
 int main(void) {
 
-	char test_artifacts[MAX_ARTIFACTS][512];
-	int artifact_count = ARTIFACT_COUNT;
-	generate_artifacts(test_artifacts);
+	char restricted_artifacts[RESTRICTED_ARTIFACT_COUNT][512];
+	char accessible_artifacts[MAX_ARTIFACTS][512];
+	int accessible_count = ACCESSIBLE_ARTIFACT_COUNT;
+	generate_artifacts(restricted_artifacts, accessible_artifacts);
 
 	seed_rng();
 
@@ -124,7 +140,7 @@ int main(void) {
 	spawn_workers(workers);
 	for (int i = 0; i < MAX_ACTIONS; i++) {
 		file_mode mode = flip_coin_file_mode();
-		const char *filename = flip_coin_artifact(test_artifacts, &artifact_count);
+		const char *filename = flip_coin_artifact(restricted_artifacts, accessible_artifacts, &accessible_count);
 	}
 
 	shutdown_workers(workers);
