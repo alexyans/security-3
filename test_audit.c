@@ -170,6 +170,7 @@ int main(void) {
 
 	seed_rng();
 
+	fflush(stdout);
 	struct worker workers[WORKER_COUNT];
 	spawn_workers(workers);
 	for (int i = 0; i < MAX_ACTIONS; i++) {
