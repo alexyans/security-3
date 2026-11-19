@@ -39,7 +39,7 @@ worker_loop(int read_fd)
 static uid_t
 flip_coin_uid(void)
 {
-	srand((unsigned)getpid());
+	seed_rng();
 	return test_uids[rand() % TEST_UID_COUNT];
 }
 
@@ -68,6 +68,12 @@ shutdown_workers(struct worker *workers)
 		close(workers[i].fd);
 		waitpid(workers[i].pid, NULL, 0);
 	}
+}
+
+static void
+seed_rng(void)
+{
+	srand((unsigned)(getpid() ^ time(NULL)));
 }
 
 static file_mode
@@ -112,11 +118,10 @@ int main(void) {
 	int artifact_count = ARTIFACT_COUNT;
 	generate_artifacts(test_artifacts);
 
+	seed_rng();
+
 	struct worker workers[WORKER_COUNT];
 	spawn_workers(workers);
-
-	long ts = (long)time(NULL);
-	srand((unsigned)ts);
 	for (int i = 0; i < MAX_ACTIONS; i++) {
 		file_mode mode = flip_coin_file_mode();
 		const char *filename = flip_coin_artifact(test_artifacts, &artifact_count);
