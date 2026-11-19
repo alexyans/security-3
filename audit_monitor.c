@@ -4,27 +4,6 @@
 #include <string.h>
 #include <unistd.h>
 
-struct log_entry {
-
-	int uid; /* user id (positive integer) */
-	pid_t pid; /* process id (positive integer) */
-
-	char *file; /* filename (string) */
-
-	time_t date; /* file access date - utc*/
-	time_t time; /* file access time - utc*/
-
-	int operation; /* access type values [0-3] */
-	int action_denied; /* is action denied values [0-1] */
-
-	char *filehash; /* file hash - sha256 - evp */
-
-	/* add here other fields if necessary */
-	/* ... */
-	/* ... */
-
-};
-
 
 void
 usage(void)
@@ -192,9 +171,10 @@ main(int argc, char *argv[])
 	if (argc < 2)
 		usage();
 
-	log = fopen("/tmp/access_audit.log", "r");
+	const char *logpath = getenv("AUDIT_LOG_PATH") ? getenv("AUDIT_LOG_PATH") : "/tmp/access_audit.log";
+	log = fopen(logpath, "r");
 	if (log == NULL) {
-		printf("Error opening log file \"%s\"\n", "./access_audit.log");
+		printf("Error opening log file \"%s\"\n", logpath);
 		return 1;
 	}
 
@@ -211,13 +191,6 @@ main(int argc, char *argv[])
 		}
 
 	}
-
-
-	/* add your code here */
-	/* ... */
-	/* ... */
-	/* ... */
-	/* ... */
 
 
 	fclose(log);
