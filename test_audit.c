@@ -37,6 +37,16 @@ struct worker {
 	int   fd;
 };
 
+static int
+ticker(void)
+{
+	static time_t last = 0;
+	time_t now = time(NULL);
+	if (last == 0) { last = now; return 0; }
+	if (now - last >= 5) { last = now; return 1; }
+	return 0;
+}
+
 static void
 seed_rng(void)
 {
@@ -158,6 +168,7 @@ int main(void) {
 	struct worker workers[WORKER_COUNT];
 	spawn_workers(workers);
 	for (int i = 0; i < MAX_ACTIONS; i++) {
+		if (ticker()) printf("%d/%d\n", i, MAX_ACTIONS);
 		struct action a;
 		strncpy(a.filename, flip_coin_artifact(restricted_artifacts, accessible_artifacts, &accessible_count), sizeof(a.filename) - 1);
 		a.filename[sizeof(a.filename) - 1] = '\0';
