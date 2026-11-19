@@ -87,6 +87,8 @@ spawn_workers(struct worker *workers)
 		pid_t pid = fork();
 		if (pid == 0) {
 			close(fds[1]);
+			for (int j = 0; j < i; j++)
+				close(workers[j].fd);
 			setuid(flip_coin_uid());
 			worker_loop(fds[0]);
 		}
