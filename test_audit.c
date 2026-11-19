@@ -37,6 +37,12 @@ struct worker {
 };
 
 static void
+seed_rng(void)
+{
+	srand((unsigned)(getpid() ^ time(NULL)));
+}
+
+static void
 worker_loop(int read_fd)
 {
 	struct action a;
@@ -79,12 +85,6 @@ shutdown_workers(struct worker *workers)
 		close(workers[i].fd);
 		waitpid(workers[i].pid, NULL, 0);
 	}
-}
-
-static void
-seed_rng(void)
-{
-	srand((unsigned)(getpid() ^ time(NULL)));
 }
 
 static file_mode
