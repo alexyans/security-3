@@ -1,4 +1,4 @@
-all: audit_logger.so audit_monitor test
+all: audit_logger.so audit_monitor test test_audit
 .PHONY: all
 
 audit_logger.so:
@@ -15,7 +15,7 @@ test_libauditlog:
 audit_monitor:
 	gcc audit_monitor.c -o audit_monitor
 
-test_audit:
+test_audit: audit_logger.so
 	gcc test_audit.c -o test_audit
 
 clean:
