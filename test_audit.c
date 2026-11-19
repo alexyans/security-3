@@ -1,6 +1,7 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #include <unistd.h>
 #include <sys/wait.h>
@@ -25,6 +26,11 @@ typedef enum {
 
 static const char *mode_strings[MODE_COUNT] = { "w", "w+", "a", "r" };
 
+struct action {
+	char      filename[512];
+	file_mode mode;
+};
+
 struct worker {
 	pid_t pid;
 	int   fd;
@@ -33,9 +39,11 @@ struct worker {
 static void
 worker_loop(int read_fd)
 {
-	void (*fn)(void);
-	while (read(read_fd, &fn, sizeof(fn)) == sizeof(fn))
-		fn();
+	struct action a;
+	while (read(read_fd, &a, sizeof(a)) == sizeof(a)) {
+		FILE *f = fopen(a.filename, mode_strings[a.mode]);
+		if (f) fclose(f);
+	}
 	exit(0);
 }
 
@@ -139,8 +147,10 @@ int main(void) {
 	struct worker workers[WORKER_COUNT];
 	spawn_workers(workers);
 	for (int i = 0; i < MAX_ACTIONS; i++) {
-		file_mode mode = flip_coin_file_mode();
-		const char *filename = flip_coin_artifact(restricted_artifacts, accessible_artifacts, &accessible_count);
+		struct action a;
+		strncpy(a.filename, flip_coin_artifact(restricted_artifacts, accessible_artifacts, &accessible_count), sizeof(a.filename) - 1);
+		a.filename[sizeof(a.filename) - 1] = '\0';
+		a.mode = flip_coin_file_mode();
 	}
 
 	shutdown_workers(workers);
