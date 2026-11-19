@@ -48,7 +48,11 @@ worker_loop(int read_fd)
 	struct action a;
 	while (read(read_fd, &a, sizeof(a)) == sizeof(a)) {
 		FILE *f = fopen(a.filename, mode_strings[a.mode]);
-		if (f) fclose(f);
+		if (f) {
+			if (a.mode != MODE_R)
+				fprintf(f, "this should change the sha pid=%d ts=%ld\n", getpid(), (long)time(NULL));
+			fclose(f);
+		}
 	}
 	exit(0);
 }
