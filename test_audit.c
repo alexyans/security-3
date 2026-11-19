@@ -6,6 +6,17 @@
 
 #define ARTIFACT_COUNT 10
 #define WORKER_COUNT   5
+#define MAX_ACTIONS    100
+
+typedef enum {
+	MODE_W,
+	MODE_WP,
+	MODE_A,
+	MODE_R,
+	MODE_COUNT,
+} file_mode;
+
+static const char *mode_strings[MODE_COUNT] = { "w", "w+", "a", "r" };
 
 struct worker {
 	pid_t pid;
@@ -47,6 +58,12 @@ shutdown_workers(struct worker *workers)
 	}
 }
 
+static file_mode
+flip_coin_file_mode(void)
+{
+	return rand() % MODE_COUNT;
+}
+
 static void
 fork_and_run(struct worker *worker, void (*fn)(void))
 {
@@ -72,7 +89,10 @@ int main(void) {
 	struct worker workers[WORKER_COUNT];
 	spawn_workers(workers);
 
-	/* dispatch work here */
+	srand((unsigned)ts);
+	for (int i = 0; i < MAX_ACTIONS; i++) {
+		file_mode mode = flip_coin_file_mode();
+	}
 
 	shutdown_workers(workers);
 	return 0;
