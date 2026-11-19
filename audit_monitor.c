@@ -158,6 +158,7 @@ list_file_modifications(FILE *log, char *file_to_scan)
 {
 	int *modifiers = calloc(MAX_UID, sizeof(int));
 	if (!modifiers) return;
+	int total_unique_modifications = 0;
 
 	char line[4096];
 	while (fgets(line, sizeof(line), log)) {
@@ -169,11 +170,13 @@ list_file_modifications(FILE *log, char *file_to_scan)
 		if (!parse_event_uid(line, &uid) || uid >= MAX_UID) continue;
 
 		modifiers[uid]++;
+		total_unique_modifications++;
 	}
 
 	for (int uid = 0; uid < MAX_UID; uid++)
 		if (modifiers[uid] > 0)
 			printf("uid: %u modifications: %d\n", uid, modifiers[uid]);
+	printf("total modifications: %d\n", total_unique_modifications);
 
 	free(modifiers);
 }
