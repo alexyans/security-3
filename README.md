@@ -51,7 +51,7 @@ uid: 60005 denied_files: 5
 
 - `LD_PRELOAD` caused the dynamic linker to load our shared library before libc. The process resolves symbols to their first occurrence, therefore our file operations effectively override the ones from the standard library.
 
-- To get a reference to the standard functions we overrided, we use `libdl`. It allows us to find subsequent occurrences of the symbols we masked. We 
+- To get a reference to the standard functions we overrode, we use `libdl`. It allows us to find subsequent occurrences of the symbols we masked.
 
 - Log events are represented as structs and serialized to plain JSON lines of the format `{"date":"2026-11-19","time":"03:42:40","pid":15791,"uid":60005,"filename":"/tmp/audit_accessible_1795059760_3.txt","operation":"WRITTEN","denied":0,"file_hash":"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"}`
 
@@ -77,14 +77,14 @@ uid: 60005 denied_files: 5
 
 9. For easy copy-paste to the log analyzer tool, artifacts created in `test_audit` are printed to STDOUT.
 
-10. In order to call `setuid()` on a process, we need to run `test_audit` as root. This has some downstream effects on file permissions, Makefile plumbing, etc. For the most part the instructions above have been tests, but when in doubt, run as root please.
+10. In order to call `setuid()` on a process, we need to run `test_audit` as root. This has some downstream effects on file permissions, Makefile plumbing, etc. For the most part the instructions above have been tested, but when in doubt, run as root please.
 
 11. Permissions are set accordingly to simulate access control failures. A set of restricted files is guaranteed to fail with EACCES when accessed by any worker process. In addition, workers may end up creating files of their own that will also set EACCES when accessed by other PIDs.
 
-12. The testrunner dispatches actions to workers via pipes. Communication is one-way. A worker executes the action and blocks again waiting for the next. There 
+12. The testrunner dispatches actions to workers via pipes. Communication is one-way. A worker executes the action and blocks again waiting for the next. 
 
 13. I considered adding "malicious mode" whereby a worker might randomly choose to repeatedly attempt restricted access. But tests already work well enough due to good uniformity.
 
 14. In fact I tried to break that uniformity a little bit to simulate uneven workloads from different users or processes. It didn't succeed much and I didn't pursue it further.
 
-15. Somewhat unnecessary but I added a crude ticker that reports progress to STDOUT every 5 seconds. Tests are much, much faster than that. i only added it for test cases with very large numbers of files and running objects that may face compounding delays. The only purpose is to make waiting more responsive.
+15. Somewhat unnecessary but I added a crude ticker that reports progress to STDOUT every 5 seconds. Tests are much, much faster than that. I only added it for test runs with very large numbers of files and running objects that may face compounding delays. The only purpose is to make waiting more responsive.
