@@ -113,7 +113,8 @@ FILE *fopen(const char *path, const char *mode) {
         ? OP_CREATED : OP_OPENED;
     FILE *result = real_fopen(path, mode);
     event.denied = (result == NULL && errno == EACCES) ? 1 : 0;
-    compute_sha256(event.filename, event.file_hash);
+    if (!event.denied)
+        compute_sha256(event.filename, event.file_hash);
     write_log_event(&event, AUDIT_LOG);
 
     return result;
