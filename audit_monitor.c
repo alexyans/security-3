@@ -74,74 +74,68 @@ parse_event_filename(const char *line, char *filename, size_t size)
 	return i > 0;
 }
 
-struct pair { unsigned int uid; char file[2048]; };
-struct uid_state { unsigned int uid; int count; };
+typedef char filename_t[2048];
 
-#define THRESHOLD 5
+#define DENIES_THRESHOLD 5
+#define MAX_UID   65536
+
+struct result_pair {
+	filename_t files[DENIES_THRESHOLD];
+	int count;
+};
 
 static int
-is_duplicate_pair(struct pair *pairs, int n, unsigned int uid, const char *filename)
+is_pair_duplicate(struct result_pair *pair, const char *filename)
 {
-	for (int j = 0; j < n; j++)
-		if (pairs[j].uid == uid && strcmp(pairs[j].file, filename) == 0)
+	for (int j = 0; j < pair->count; j++)
+		if (strcmp(pair->files[j], filename) == 0)
 			return 1;
 	return 0;
 }
 
 static int
-are_user_pairs_maxed(struct uid_state *states, int n, unsigned int uid)
+is_user_acc_maxed_out(struct pair *pair)
 {
-	for (int i = 0; i < n; i++)
-		if (states[i].uid == uid) return states[i].count >= THRESHOLD;
-	return 0;
+	return pair && pair->count >= DENIES_THRESHOLD;
 }
 
 
 void
 list_unauthorized_accesses(FILE *log)
 {
-#define MAX_PAIRS 65536
-	struct pair *pairs = malloc(MAX_PAIRS * sizeof(*pairs));
-	if (!pairs) return;
-	int n = 0;
-
-	struct uid_state uid_states[1024];
-	int uid_states_n = 0;
+	struct result_pair **pairs_by_uid = calloc(MAX_UID, sizeof(*pairs_by_uid));
+	if (!pairs_by_uid) return;
 
 	char line[4096];
 	while (fgets(line, sizeof(line), log)) {
 		if (!is_event_denied(line)) continue;
 
 		unsigned int uid;
-		if (!parse_event_uid(line, &uid)) continue;
+		if (!parse_event_uid(line, &uid) || uid >= MAX_UID) continue;
 
 		char filename[2048];
 		if (!parse_event_filename(line, filename, sizeof(filename))) continue;
 
-		if (are_user_pairs_maxed(uid_states, uid_states_n, uid)) continue;
+		if (is_user_acc_maxed_out(pairs_by_uid[uid])) continue;
 
-		if (!is_duplicate_pair(pairs, n, uid, filename) && n < MAX_PAIRS) {
-			pairs[n].uid = uid;
-			strncpy(pairs[n].file, filename, sizeof(pairs[n].file) - 1);
-			n++;
+		if (!pairs_by_uid[uid]) {
+			pairs_by_uid[uid] = calloc(1, sizeof(struct result_pair));
+			if (!pairs_by_uid[uid]) continue;
+		}
 
-			int found = 0;
-			for (int j = 0; j < uid_states_n; j++)
-				if (uid_states[j].uid == uid) { uid_states[j].count++; found = 1; break; }
-			if (!found && uid_states_n < 1024) {
-				uid_states[uid_states_n].uid = uid;
-				uid_states[uid_states_n].count = 1;
-				uid_states_n++;
-			}
+		if (!is_pair_duplicate(pairs_by_uid[uid], filename)) {
+			strncpy(pairs_by_uid[uid]->files[pairs_by_uid[uid]->count], filename, sizeof(filename_t) - 1);
+			pairs_by_uid[uid]->count++;
 		}
 	}
 
-	for (int i = 0; i < uid_states_n; i++)
-		if (uid_states[i].count >= THRESHOLD)
-			printf("uid=%u denied_files=%d\n", uid_states[i].uid, uid_states[i].count);
+	for (int uid = 0; uid < MAX_UID; uid++)
+		if (pairs_by_uid[uid] && pairs_by_uid[uid]->count >= DENIES_THRESHOLD)
+			printf("uid: %u denied_files: %d\n", uid, pairs_by_uid[uid]->count);
 
-	free(pairs);
-#undef MAX_PAIRS
+	for (int uid = 0; uid < MAX_UID; uid++)
+		free(pairs_by_uid[uid]);
+	free(pairs_by_uid);
 }
 
 
