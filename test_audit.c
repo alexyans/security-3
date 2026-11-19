@@ -5,6 +5,7 @@
 #include <sys/wait.h>
 
 #define ARTIFACT_COUNT 10
+#define MAX_ARTIFACTS  256
 #define WORKER_COUNT   5
 #define MAX_ACTIONS    100
 
@@ -64,6 +65,19 @@ flip_coin_file_mode(void)
 	return rand() % MODE_COUNT;
 }
 
+static const char *
+flip_coin_artifact(char artifacts[][512], int *count)
+{
+	int idx = rand() % (*count + 1);
+	if (idx == *count && *count < MAX_ARTIFACTS) {
+		snprintf(artifacts[*count], 512, "/tmp/audit_test_%ld_%d.txt", (long)time(NULL), *count);
+		(*count)++;
+	} else if (idx == *count) {
+		idx = *count - 1;
+	}
+	return artifacts[idx];
+}
+
 static void
 fork_and_run(struct worker *worker, void (*fn)(void))
 {
@@ -71,11 +85,11 @@ fork_and_run(struct worker *worker, void (*fn)(void))
 }
 
 static void
-generate_artifacts(char artifacts[ARTIFACT_COUNT][64])
+generate_artifacts(char artifacts[ARTIFACT_COUNT][512])
 {
 	long ts = (long)time(NULL);
 	for (int i = 0; i < ARTIFACT_COUNT; i++) {
-		snprintf(artifacts[i], 64, "/tmp/audit_test_%ld_%d.txt", ts, i);
+		snprintf(artifacts[i], 512, "/tmp/audit_test_%ld_%d.txt", ts, i);
 		FILE *f = fopen(artifacts[i], "w");
 		if (f) fclose(f);
 	}
@@ -83,15 +97,18 @@ generate_artifacts(char artifacts[ARTIFACT_COUNT][64])
 
 int main(void) {
 
-	char test_artifacts[ARTIFACT_COUNT][64];
+	char test_artifacts[MAX_ARTIFACTS][512];
+	int artifact_count = ARTIFACT_COUNT;
 	generate_artifacts(test_artifacts);
 
 	struct worker workers[WORKER_COUNT];
 	spawn_workers(workers);
 
+	long ts = (long)time(NULL);
 	srand((unsigned)ts);
 	for (int i = 0; i < MAX_ACTIONS; i++) {
 		file_mode mode = flip_coin_file_mode();
+		const char *filename = flip_coin_artifact(test_artifacts, &artifact_count);
 	}
 
 	shutdown_workers(workers);
