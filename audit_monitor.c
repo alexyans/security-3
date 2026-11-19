@@ -192,7 +192,7 @@ main(int argc, char *argv[])
 	if (argc < 2)
 		usage();
 
-	log = fopen("./access_audit.log", "r");
+	log = fopen("/tmp/access_audit.log", "r");
 	if (log == NULL) {
 		printf("Error opening log file \"%s\"\n", "./access_audit.log");
 		return 1;
