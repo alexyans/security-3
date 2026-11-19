@@ -51,14 +51,6 @@ is_event_written(const char *line)
 }
 
 static int
-does_filename_match(const char *line, const char *filename)
-{
-	char parsed[2048];
-	if (!parse_event_filename(line, parsed, sizeof(parsed))) return 0;
-	return strcmp(parsed, filename) == 0;
-}
-
-static int
 is_event_denied(const char *line)
 {
 	const char *p = strstr(line, "\"denied\":");
@@ -86,6 +78,14 @@ parse_event_filename(const char *line, char *filename, size_t size)
 		filename[i++] = *p++;
 	filename[i] = '\0';
 	return i > 0;
+}
+
+static int
+does_filename_match(const char *line, const char *filename)
+{
+	char parsed[2048];
+	if (!parse_event_filename(line, parsed, sizeof(parsed))) return 0;
+	return strcmp(parsed, filename) == 0;
 }
 
 typedef char filename_t[2048];
