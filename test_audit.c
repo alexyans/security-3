@@ -8,6 +8,9 @@
 #define MAX_ARTIFACTS  256
 #define WORKER_COUNT   5
 #define MAX_ACTIONS    100
+#define TEST_UID_COUNT 5
+
+static const uid_t test_uids[TEST_UID_COUNT] = { 60001, 60002, 60003, 60004, 60005 };
 
 typedef enum {
 	MODE_W,
@@ -33,6 +36,13 @@ worker_loop(int read_fd)
 	exit(0);
 }
 
+static uid_t
+flip_coin_uid(void)
+{
+	srand((unsigned)getpid());
+	return test_uids[rand() % TEST_UID_COUNT];
+}
+
 static void
 spawn_workers(struct worker *workers)
 {
@@ -42,6 +52,7 @@ spawn_workers(struct worker *workers)
 		pid_t pid = fork();
 		if (pid == 0) {
 			close(fds[1]);
+			setuid(flip_coin_uid());
 			worker_loop(fds[0]);
 		}
 		close(fds[0]);
