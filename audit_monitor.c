@@ -108,7 +108,7 @@ is_pair_duplicate(struct result_pair *pair, const char *filename)
 }
 
 static int
-is_user_acc_maxed_out(struct pair *pair)
+is_user_acc_maxed_out(struct result_pair *pair)
 {
 	return pair && pair->count >= DENIES_THRESHOLD;
 }
