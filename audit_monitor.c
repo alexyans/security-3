@@ -45,6 +45,20 @@ usage(void)
 
 
 static int
+is_event_written(const char *line)
+{
+	return strstr(line, "\"operation\":\"WRITTEN\"") != NULL;
+}
+
+static int
+does_filename_match(const char *line, const char *filename)
+{
+	char parsed[2048];
+	if (!parse_event_filename(line, parsed, sizeof(parsed))) return 0;
+	return strcmp(parsed, filename) == 0;
+}
+
+static int
 is_event_denied(const char *line)
 {
 	const char *p = strstr(line, "\"denied\":");
@@ -142,15 +156,26 @@ list_unauthorized_accesses(FILE *log)
 void
 list_file_modifications(FILE *log, char *file_to_scan)
 {
+	int *modifiers = calloc(MAX_UID, sizeof(int));
+	if (!modifiers) return;
 
-	/* add your code here */
-	/* ... */
-	/* ... */
-	/* ... */
-	/* ... */
+	char line[4096];
+	while (fgets(line, sizeof(line), log)) {
+		if (!is_event_written(line)) continue;
+		if (!does_filename_match(line, file_to_scan)) continue;
+		if (is_event_denied(line)) continue;
 
-	return;
+		unsigned int uid;
+		if (!parse_event_uid(line, &uid) || uid >= MAX_UID) continue;
 
+		modifiers[uid]++;
+	}
+
+	for (int uid = 0; uid < MAX_UID; uid++)
+		if (modifiers[uid] > 0)
+			printf("uid: %u modifications: %d\n", uid, modifiers[uid]);
+
+	free(modifiers);
 }
 
 
